@@ -24,9 +24,27 @@ Prerequisites: Docker Desktop and the Dev Containers extension in Cursor.
 
 1. Click **Use this template** on GitHub → clone to your machine
 2. Open in Cursor → `Cmd+Shift+P` → **Dev Containers: Reopen in Container**
-3. Wait for the build (first run installs Claude and configures the firewall)
+3. Wait for the build (first run installs Claude, configures the firewall, and runs `post-create.sh` to install project deps)
 4. Verify: `claude --version`
-5. Run Claude in autonomous mode: `claude --dangerously-skip-permissions`
+5. Run Claude in autonomous mode: `bin/claude-yolo`
+
+`claude-yolo` is a thin wrapper that starts `claude --dangerously-skip-permissions`
+and refuses to run outside the devcontainer. Set `CLAUDE_BYPASS_HOST_OK=1` to
+override, but don't — see the guardrails below for why.
+
+## Guardrails under bypass mode
+
+Running `--dangerously-skip-permissions` disables permission prompts, so the
+`deny` rules in `.claude/settings.local.json` are **not** enforced. Real
+enforcement lives in the global hooks at `~/.claude/hooks/`:
+
+- `enforce-bypass-in-container.sh` (SessionStart) — refuses bypass outside the container
+- `block-destructive-bash.sh` (PreToolUse/Bash) — blocks `rm -rf ~`, `sudo`, `git push --force` (without `--force-with-lease`), `git reset --hard`, `curl | sh`, writes to `.env` / `.ssh`
+- `restrict-edit-paths.sh` (PreToolUse/Edit|Write) — confines writes to `/workspace` inside the container; always blocks `~/.ssh`, `~/.aws`, and self-loosening of `~/.claude/settings*.json`
+- `checkpoint.sh` (Stop) — snapshots the worktree to `refs/checkpoints/<branch>` so you can roll back without touching your working branch
+
+The firewall allowlist is re-resolved every 2 hours via cron (`firewall-refresh-cron.sh`)
+so CDN IP rotation doesn't silently break the container.
 
 ## New project checklist
 

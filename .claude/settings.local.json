@@ -1,5 +1,6 @@
 {
-  "enableAllProjectMcpServers": true,
+  "__comment": "Real enforcement lives in ~/.claude/hooks/ (runs under --dangerously-skip-permissions). This file only configures convenience allowlists and MCP trust; deny rules here are NOT enforced under bypass mode.",
+  "enableAllProjectMcpServers": false,
   "enabledMcpjsonServers": [],
   "permissions": {
     "allow": [
@@ -11,28 +12,14 @@
       "Bash(ls:*)",
       "Bash(pwd:*)",
       "Bash(rg:*)",
+      "Bash(fd:*)",
+      "Bash(tree:*)",
       "Bash(git status:*)",
       "Bash(git diff:*)",
       "Bash(git log:*)",
       "Bash(git branch:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)"
-    ],
-    "deny": [
-      "Bash(git reset --hard:*)",
-      "Bash(git checkout --:*)",
-      "Bash(git clean -fd:*)",
-      "Bash(git push --force:*)",
-      "Bash(git rebase -i:*)",
-      "Bash(rm -rf /:*)",
-      "Bash(rm -rf ~:*)",
-      "Bash(sudo *:*)",
-      "Read(~/.ssh/**)",
-      "Read(**/.env)",
-      "Read(**/.env.*)",
-      "Read(**/*secret*)",
-      "Read(**/*credential*)",
-      "Read(**/*token*)"
     ]
   }
 }

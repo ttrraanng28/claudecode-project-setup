@@ -25,6 +25,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   jq \
   nano \
   vim \
+  cron \
+  ripgrep \
+  fd-find \
+  tree \
+  python3 \
+  python3-pip \
+  python3-venv \
+  pipx \
+  && ln -sf "$(command -v fdfind)" /usr/local/bin/fd \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Ensure default node user has access to /usr/local/share
@@ -81,11 +90,15 @@ RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/
 # Install Claude
 RUN npm install -g @anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}
 
+# Install uv (fast Python package manager) for the node user
+RUN pipx ensurepath && pipx install uv
+ENV PATH=$PATH:/home/node/.local/bin
 
-# Copy and set up firewall script
-COPY init-firewall.sh /usr/local/bin/
+
+# Copy and set up firewall scripts
+COPY init-firewall.sh firewall-refresh-cron.sh /usr/local/bin/
 USER root
-RUN chmod +x /usr/local/bin/init-firewall.sh && \
-  echo "node ALL=(root) NOPASSWD: /usr/local/bin/init-firewall.sh" > /etc/sudoers.d/node-firewall && \
+RUN chmod +x /usr/local/bin/init-firewall.sh /usr/local/bin/firewall-refresh-cron.sh && \
+  echo "node ALL=(root) NOPASSWD: /usr/local/bin/init-firewall.sh, /usr/local/bin/firewall-refresh-cron.sh" > /etc/sudoers.d/node-firewall && \
   chmod 0440 /etc/sudoers.d/node-firewall
 USER node

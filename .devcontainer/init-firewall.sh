@@ -2,6 +2,91 @@
 set -euo pipefail  # Exit on error, undefined vars, and pipeline failures
 IFS=$'\n\t'       # Stricter word splitting
 
+MODE="${1:-init}"
+
+# Domains that must resolve for normal dev flows (Node + Python + docs).
+ALLOWED_DOMAINS=(
+    "registry.npmjs.org"
+    "api.anthropic.com"
+    "docs.anthropic.com"
+    "sentry.io"
+    "statsig.anthropic.com"
+    "statsig.com"
+    "marketplace.visualstudio.com"
+    "vscode.blob.core.windows.net"
+    "update.code.visualstudio.com"
+    "pypi.org"
+    "files.pythonhosted.org"
+    "deb.debian.org"
+    "security.debian.org"
+)
+
+# populate_ipset <ipset-name>
+# Creates the named ipset (if missing), clears it, and fills it with:
+#   - GitHub's published CIDR ranges (web/api/git)
+#   - A records for every allowed domain
+populate_ipset() {
+    local ipset_name="$1"
+
+    ipset create "$ipset_name" hash:net 2>/dev/null || ipset flush "$ipset_name"
+
+    echo "Fetching GitHub IP ranges..."
+    local gh_ranges
+    gh_ranges=$(curl -s https://api.github.com/meta)
+    if [ -z "$gh_ranges" ]; then
+        echo "ERROR: Failed to fetch GitHub IP ranges"
+        return 1
+    fi
+    if ! echo "$gh_ranges" | jq -e '.web and .api and .git' >/dev/null; then
+        echo "ERROR: GitHub API response missing required fields"
+        return 1
+    fi
+
+    echo "Processing GitHub IPs..."
+    while read -r cidr; do
+        if [[ ! "$cidr" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/[0-9]{1,2}$ ]]; then
+            echo "ERROR: Invalid CIDR range from GitHub meta: $cidr"
+            return 1
+        fi
+        ipset add "$ipset_name" "$cidr"
+    done < <(echo "$gh_ranges" | jq -r '(.web + .api + .git)[]' | aggregate -q)
+
+    local domain ips ip
+    for domain in "${ALLOWED_DOMAINS[@]}"; do
+        echo "Resolving $domain..."
+        ips=$(dig +noall +answer A "$domain" | awk '$4 == "A" {print $5}')
+        if [ -z "$ips" ]; then
+            echo "ERROR: Failed to resolve $domain"
+            return 1
+        fi
+        while read -r ip; do
+            if [[ ! "$ip" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+                echo "ERROR: Invalid IP from DNS for $domain: $ip"
+                return 1
+            fi
+            ipset add "$ipset_name" "$ip"
+        done < <(echo "$ips")
+    done
+}
+
+# ---------- refresh mode -----------------------------------------------------
+# Re-resolves the allowlist into a scratch ipset, then atomically swaps it in.
+# Does NOT touch iptables rules, connection tracking, or the cron entry.
+if [ "$MODE" = "refresh" ]; then
+    echo "Refreshing allowed-domains ipset at $(date -u +%FT%TZ)"
+    if ! populate_ipset "allowed-domains-new"; then
+        echo "Refresh aborted; keeping existing ipset."
+        ipset destroy allowed-domains-new 2>/dev/null || true
+        exit 1
+    fi
+    ipset swap allowed-domains allowed-domains-new
+    ipset destroy allowed-domains-new
+    echo "Refresh complete."
+    exit 0
+fi
+
+# ---------- full init mode ---------------------------------------------------
+
 # 1. Extract Docker DNS info BEFORE any flushing
 DOCKER_DNS_RULES=$(iptables-save -t nat | grep "127\.0\.0\.11" || true)
 
@@ -37,58 +122,8 @@ iptables -A INPUT -p tcp --sport 22 -m state --state ESTABLISHED -j ACCEPT
 iptables -A INPUT -i lo -j ACCEPT
 iptables -A OUTPUT -o lo -j ACCEPT
 
-# Create ipset with CIDR support
-ipset create allowed-domains hash:net
-
-# Fetch GitHub meta information and aggregate + add their IP ranges
-echo "Fetching GitHub IP ranges..."
-gh_ranges=$(curl -s https://api.github.com/meta)
-if [ -z "$gh_ranges" ]; then
-    echo "ERROR: Failed to fetch GitHub IP ranges"
-    exit 1
-fi
-
-if ! echo "$gh_ranges" | jq -e '.web and .api and .git' >/dev/null; then
-    echo "ERROR: GitHub API response missing required fields"
-    exit 1
-fi
-
-echo "Processing GitHub IPs..."
-while read -r cidr; do
-    if [[ ! "$cidr" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/[0-9]{1,2}$ ]]; then
-        echo "ERROR: Invalid CIDR range from GitHub meta: $cidr"
-        exit 1
-    fi
-    echo "Adding GitHub range $cidr"
-    ipset add allowed-domains "$cidr"
-done < <(echo "$gh_ranges" | jq -r '(.web + .api + .git)[]' | aggregate -q)
-
-# Resolve and add other allowed domains
-for domain in \
-    "registry.npmjs.org" \
-    "api.anthropic.com" \
-    "sentry.io" \
-    "statsig.anthropic.com" \
-    "statsig.com" \
-    "marketplace.visualstudio.com" \
-    "vscode.blob.core.windows.net" \
-    "update.code.visualstudio.com"; do
-    echo "Resolving $domain..."
-    ips=$(dig +noall +answer A "$domain" | awk '$4 == "A" {print $5}')
-    if [ -z "$ips" ]; then
-        echo "ERROR: Failed to resolve $domain"
-        exit 1
-    fi
-
-    while read -r ip; do
-        if [[ ! "$ip" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
-            echo "ERROR: Invalid IP from DNS for $domain: $ip"
-            exit 1
-        fi
-        echo "Adding $ip for $domain"
-        ipset add allowed-domains "$ip"
-    done < <(echo "$ips")
-done
+# Populate the allowlist ipset (GitHub + resolved domains)
+populate_ipset "allowed-domains"
 
 # Get host IP from default route
 HOST_IP=$(ip route | grep default | cut -d" " -f3)

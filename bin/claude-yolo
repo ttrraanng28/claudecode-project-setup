@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# claude-yolo: entry point for running Claude Code with
+# --dangerously-skip-permissions. Refuses to run outside the devcontainer
+# unless the user has explicitly opted in via CLAUDE_BYPASS_HOST_OK=1.
+#
+# This is the first line of defense. The SessionStart hook in
+# ~/.claude/hooks/enforce-bypass-in-container.sh is the second.
+
+set -euo pipefail
+
+if [ "${DEVCONTAINER:-}" != "true" ] && [ "${CLAUDE_BYPASS_HOST_OK:-}" != "1" ]; then
+  cat >&2 <<'EOF'
+claude-yolo: refusing to run --dangerously-skip-permissions outside a devcontainer.
+
+Why: bypass mode disables all permission prompts, so destructive commands and
+writes to your home directory happen without confirmation. The devcontainer
+confines blast radius via a network allowlist and a /workspace bind-mount.
+
+What to do:
+  1. Open this folder in Cursor.
+  2. Cmd+Shift+P -> "Dev Containers: Reopen in Container".
+  3. Run claude-yolo inside the container.
+
+Override (not recommended):
+  CLAUDE_BYPASS_HOST_OK=1 claude-yolo
+EOF
+  exit 1
+fi
+
+exec claude --dangerously-skip-permissions "$@"

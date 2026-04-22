@@ -33,7 +33,17 @@ To activate:
 - Wait for build to complete
 - Verify with: `claude --version`
 
-To run Claude Code in bypass mode:
+To run Claude Code in bypass mode, use the wrapper:
 ```
-claude --dangerously-skip-permissions
+bin/claude-yolo
 ```
+
+## Guardrails
+
+Global hooks at `~/.claude/hooks/` run even under `--dangerously-skip-permissions`:
+
+- Destructive Bash (`rm -rf ~`, `sudo`, `git push --force` without `--force-with-lease`, `git reset --hard`, `curl | sh`, writes to `.env`/`.ssh`) is blocked.
+- Edits and writes are confined to `/workspace` inside the container. `~/.ssh`, `~/.aws`, and `~/.claude/settings*.json` are always blocked.
+- Every turn end auto-snapshots to `refs/checkpoints/<branch>` — working branch is never touched. Recover with `git diff refs/checkpoints/<branch>` or `git checkout refs/checkpoints/<branch> -- <path>`.
+
+A tool call that exits 2 with a `blocked by ...` message is the guard firing — adjust your approach rather than retrying.
