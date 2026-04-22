@@ -36,7 +36,22 @@ override, but don't — see the guardrails below for why.
 
 Running `--dangerously-skip-permissions` disables permission prompts, so the
 `deny` rules in `.claude/settings.local.json` are **not** enforced. Real
-enforcement lives in the global hooks at `~/.claude/hooks/`:
+enforcement lives in hooks shipped with this repo at `.claude/hooks/`.
+
+The container's `post-create.sh` installs them into `/home/node/.claude/hooks/`
+and merges the hook wiring into the container's `settings.json` on first boot.
+To pick up hook edits without a full rebuild, re-run `.devcontainer/post-create.sh`
+inside the container.
+
+For Claude runs **outside** the container, copy the scripts to your host's
+`~/.claude/hooks/` once:
+```
+mkdir -p ~/.claude/hooks && cp .claude/hooks/*.sh ~/.claude/hooks/
+```
+and add the `hooks` + `statusLine` block from `.devcontainer/post-create.sh`
+to your `~/.claude/settings.json`.
+
+The hooks:
 
 - `enforce-bypass-in-container.sh` (SessionStart) — refuses bypass outside the container
 - `block-destructive-bash.sh` (PreToolUse/Bash) — blocks `rm -rf ~`, `sudo`, `git push --force` (without `--force-with-lease`), `git reset --hard`, `curl | sh`, writes to `.env` / `.ssh`

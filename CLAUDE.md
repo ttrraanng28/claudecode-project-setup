@@ -40,7 +40,8 @@ bin/claude-yolo
 
 ## Guardrails
 
-Global hooks at `~/.claude/hooks/` run even under `--dangerously-skip-permissions`:
+Project-versioned hooks at `.claude/hooks/` (installed into the container by
+`post-create.sh`) run even under `--dangerously-skip-permissions`:
 
 - Destructive Bash (`rm -rf ~`, `sudo`, `git push --force` without `--force-with-lease`, `git reset --hard`, `curl | sh`, writes to `.env`/`.ssh`) is blocked.
 - Edits and writes are confined to `/workspace` inside the container. `~/.ssh`, `~/.aws`, and `~/.claude/settings*.json` are always blocked.
