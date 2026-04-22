@@ -1,4 +1,38 @@
 {
   "enableAllProjectMcpServers": true,
-  "enabledMcpjsonServers": []
+  "enabledMcpjsonServers": [],
+  "permissions": {
+    "allow": [
+      "Read(**)",
+      "Glob(**)",
+      "Grep(**)",
+      "Edit(/workspace/**)",
+      "Write(/workspace/**)",
+      "Bash(ls:*)",
+      "Bash(pwd:*)",
+      "Bash(rg:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git branch:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
+    ],
+    "deny": [
+      "Bash(git reset --hard:*)",
+      "Bash(git checkout --:*)",
+      "Bash(git clean -fd:*)",
+      "Bash(git push --force:*)",
+      "Bash(git rebase -i:*)",
+      "Bash(rm -rf /:*)",
+      "Bash(rm -rf ~:*)",
+      "Bash(sudo *:*)",
+      "Read(~/.ssh/**)",
+      "Read(**/.env)",
+      "Read(**/.env.*)",
+      "Read(**/*secret*)",
+      "Read(**/*credential*)",
+      "Read(**/*token*)"
+    ]
+  }
 }

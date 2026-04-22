@@ -2,46 +2,42 @@
 
 A project template for AI-assisted development with Claude Code — user preferences, a docs-driven context system, and custom workflow commands.
 
-## Structure
+## What this repo contains
 
-```
-.
-├── .claude/
-│   ├── commands/
-│   │   ├── commit.md        # Semantic commit workflow
-│   │   ├── add.md           # Custom command generator
-│   │   ├── note.md          # Vault capture (decisions, ideas, lexicon)
-│   │   └── educate.md       # 6-phase technical teaching
-│   ├── docs/
-│   │   ├── index.md         # Routing hub — read this before any task
-│   │   ├── architecture.md  # Stack, structure, key patterns
-│   │   ├── database.md      # Schema, relationships, auth/RLS, migrations
-│   │   ├── api.md           # Route map, auth conventions, error handling
-│   │   └── deployment.md    # Environments, deploy steps, env vars
-│   └── skills/
-│       └── skill-creator/   # Skill creation workflow
-├── .mcp.json                # MCP server definitions
-├── CLAUDE.md                # User preferences + navigation protocol
-└── HANDOFF.md               # Session handoff — updated after each feature
-```
+- `.claude/commands/`: reusable slash commands
+- `.claude/docs/`: on-demand project docs
+- `CLAUDE.md`: agent-facing project rules and behavior
+- `HANDOFF.md`: short running context between sessions
 
-## Quick Start
-
-### Option A: Fork and Clone
+## Quick start
 
 ```bash
 git clone https://github.com/YOUR_USERNAME/my-claude-setup.git my-project
 cd my-project
 ```
 
-### Option B: Copy into an existing project
+Or copy `.claude/`, `CLAUDE.md`, and `HANDOFF.md` into an existing project.
 
-```bash
-git clone https://github.com/YOUR_USERNAME/my-claude-setup.git /tmp/claude-setup
-cp -r /tmp/claude-setup/.claude /path/to/your/project/
-cp /tmp/claude-setup/CLAUDE.md /path/to/your/project/
-cp /tmp/claude-setup/HANDOFF.md /path/to/your/project/
-```
+## Sandbox Setup
+
+Prerequisites: Docker Desktop and the Dev Containers extension in Cursor.
+
+1. Click **Use this template** on GitHub → clone to your machine
+2. Open in Cursor → `Cmd+Shift+P` → **Dev Containers: Reopen in Container**
+3. Wait for the build (first run installs Claude and configures the firewall)
+4. Verify: `claude --version`
+5. Run Claude in autonomous mode: `claude --dangerously-skip-permissions`
+
+## New project checklist
+
+After cloning, configure the template for your project:
+
+- [ ] Fill in `CLAUDE.md` → `## Project-Specific Stack` with your actual stack
+- [ ] Update `.claude/docs/index.md` → replace placeholder paths with your real file paths
+- [ ] Fill in `.claude/docs/architecture.md` with your stack and project structure
+- [ ] Delete doc stubs you won't use (`api.md`, `database.md`, `deployment.md`) or fill them in
+- [ ] Clear `HANDOFF.md` and write a 1-2 sentence project summary
+- [ ] Update `.claude/settings.local.json` → change `Edit`/`Write` paths from `/workspace/**` to your project root
 
 ## How it works
 

@@ -22,3 +22,18 @@ This project inherits all global preferences from `~/.claude/CLAUDE.md`. Overrid
 ## Project Overrides
 
 Add any project-specific rules here that override global guidelines (e.g., style, tooling, workflow). Leave empty if none.
+
+## Environment
+
+This project runs inside a secure devcontainer.
+
+To activate:
+- Open folder in Cursor
+- Cmd+Shift+P → "Dev Containers: Reopen in Container"
+- Wait for build to complete
+- Verify with: `claude --version`
+
+To run Claude Code in bypass mode:
+```
+claude --dangerously-skip-permissions
+```
