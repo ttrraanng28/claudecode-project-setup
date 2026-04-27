@@ -5,7 +5,7 @@ ENV TZ="$TZ"
 
 ARG CLAUDE_CODE_VERSION=latest
 
-# Install basic development tools and iptables/ipset
+# Install basic development tools
 RUN apt-get update && apt-get install -y --no-install-recommends \
   less \
   git \
@@ -17,15 +17,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   unzip \
   gnupg2 \
   gh \
-  iptables \
-  ipset \
   iproute2 \
   dnsutils \
-  aggregate \
   jq \
   nano \
   vim \
-  cron \
   ripgrep \
   fd-find \
   tree \
@@ -94,11 +90,3 @@ RUN npm install -g @anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}
 RUN pipx ensurepath && pipx install uv
 ENV PATH=$PATH:/home/node/.local/bin
 
-
-# Copy and set up firewall scripts
-COPY init-firewall.sh firewall-refresh-cron.sh /usr/local/bin/
-USER root
-RUN chmod +x /usr/local/bin/init-firewall.sh /usr/local/bin/firewall-refresh-cron.sh && \
-  echo "node ALL=(root) NOPASSWD: /usr/local/bin/init-firewall.sh, /usr/local/bin/firewall-refresh-cron.sh" > /etc/sudoers.d/node-firewall && \
-  chmod 0440 /etc/sudoers.d/node-firewall
-USER node

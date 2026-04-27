@@ -24,7 +24,7 @@ Prerequisites: Docker Desktop and the Dev Containers extension in Cursor.
 
 1. Click **Use this template** on GitHub → clone to your machine
 2. Open in Cursor → `Cmd+Shift+P` → **Dev Containers: Reopen in Container**
-3. Wait for the build (first run installs Claude, configures the firewall, and runs `post-create.sh` to install project deps)
+3. Wait for the build (first run installs Claude and runs `post-create.sh` to install hooks and project deps)
 4. Verify: `claude --version`
 5. Run Claude in autonomous mode: `bin/claude-yolo`
 
@@ -57,9 +57,6 @@ The hooks:
 - `block-destructive-bash.sh` (PreToolUse/Bash) — blocks `rm -rf ~`, `sudo`, `git push --force` (without `--force-with-lease`), `git reset --hard`, `curl | sh`, writes to `.env` / `.ssh`
 - `restrict-edit-paths.sh` (PreToolUse/Edit|Write) — confines writes to `/workspace` inside the container; always blocks `~/.ssh`, `~/.aws`, and self-loosening of `~/.claude/settings*.json`
 - `checkpoint.sh` (Stop) — snapshots the worktree to `refs/checkpoints/<branch>` so you can roll back without touching your working branch
-
-The firewall allowlist is re-resolved every 2 hours via cron (`firewall-refresh-cron.sh`)
-so CDN IP rotation doesn't silently break the container.
 
 ## New project checklist
 
