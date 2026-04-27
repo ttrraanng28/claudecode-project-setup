@@ -45,7 +45,10 @@ PATCH=$(cat <<'JSON'
       { "matcher": "Edit|Write", "hooks": [{ "type": "command", "command": "~/.claude/hooks/restrict-edit-paths.sh" }] }
     ],
     "Stop": [
-      { "hooks": [{ "type": "command", "command": "~/.claude/hooks/checkpoint.sh" }] }
+      { "hooks": [
+        { "type": "command", "command": "~/.claude/hooks/checkpoint.sh" },
+        { "type": "command", "command": "~/.claude/hooks/notify.sh" }
+      ]}
     ]
   }
 }

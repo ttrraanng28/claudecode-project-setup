@@ -32,7 +32,7 @@ populate_ipset() {
 
     echo "Fetching GitHub IP ranges..."
     local gh_ranges
-    gh_ranges=$(curl -s https://api.github.com/meta)
+    gh_ranges=$(curl -s --connect-timeout 5 --max-time 10 https://api.github.com/meta)
     if [ -z "$gh_ranges" ]; then
         echo "ERROR: Failed to fetch GitHub IP ranges"
         return 1
@@ -54,7 +54,7 @@ populate_ipset() {
     local domain ips ip
     for domain in "${ALLOWED_DOMAINS[@]}"; do
         echo "Resolving $domain..."
-        ips=$(dig +noall +answer A "$domain" | awk '$4 == "A" {print $5}')
+        ips=$(dig +noall +answer A "$domain" +timeout=2 +tries=1 | awk '$4 == "A" {print $5}')
         if [ -z "$ips" ]; then
             echo "ERROR: Failed to resolve $domain"
             return 1

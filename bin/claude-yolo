@@ -27,4 +27,11 @@ EOF
   exit 1
 fi
 
-exec claude --dangerously-skip-permissions "$@"
+MAX_TURNS="${CLAUDE_MAX_TURNS:-10}"
+
+# Only inject --max-turns if the caller didn't pass one explicitly.
+for arg in "$@"; do
+  [ "$arg" = "--max-turns" ] && MAX_TURNS="" && break
+done
+
+exec claude --dangerously-skip-permissions ${MAX_TURNS:+--max-turns "$MAX_TURNS"} "$@"
