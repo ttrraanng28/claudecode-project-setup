@@ -1,7 +1,4 @@
 {
-  "__comment": "Real enforcement lives in ~/.claude/hooks/ (runs under --dangerously-skip-permissions). This file only configures convenience allowlists and MCP trust; deny rules here are NOT enforced under bypass mode.",
-  "enableAllProjectMcpServers": false,
-  "enabledMcpjsonServers": [],
   "permissions": {
     "allow": [
       "Read(**)",
@@ -21,5 +18,8 @@
       "Bash(git add:*)",
       "Bash(git commit:*)"
     ]
-  }
+  },
+  "enableAllProjectMcpServers": false,
+  "enabledMcpjsonServers": [],
+  "__comment": "Real enforcement lives in ~/.claude/hooks/ (runs under --dangerously-skip-permissions). This file only configures convenience allowlists and MCP trust; deny rules here are NOT enforced under bypass mode."
 }
